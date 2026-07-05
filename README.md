@@ -15,6 +15,15 @@ This repo packages the provider setup work that keeps getting reimplemented:
 
 The kit deliberately stops at provider access and settings UI. Your app still owns prompts, tools, chat history, streaming, authorization, billing policy, database persistence, and any product-specific confirmation flow.
 
+## Status
+
+This is a source-first extraction from PassGo Web. The Go package can be consumed with `go get`; the Vue package is intentionally kept as copyable source for now rather than a published npm package. That makes it easy to drop into projects with different build systems, auth clients, toast systems, and styling.
+
+Reference implementation:
+
+- Extracted from PassGo Web: https://github.com/rootisgod/passgo-webui
+- PassGo integration note: https://github.com/rootisgod/passgo-webui/blob/main/docs/llm-settings-kit.md
+
 ## Repository Layout
 
 ```text
@@ -73,6 +82,15 @@ type Store interface {
 ```
 
 `api_key` is accepted on update, but never returned by the config response.
+
+### Backend Integration Checklist
+
+1. Add `github.com/iaingblack/llm-kit/llmkit`.
+2. Implement `llmkit.Store` using your existing config file, database, or secret store.
+3. Mount `Handler.Register()` under your app's authenticated API namespace.
+4. Keep API keys server-side. Return only `has_api_key` and `api_key_source`.
+5. Use `llmkit.Resolve()` when constructing your own chat/completions request.
+6. Keep your app's prompts, tools, tool execution, and confirmation policy outside this kit.
 
 ## API Contract
 
@@ -180,6 +198,14 @@ The default modal has no Tailwind or icon dependency. Style it with CSS variable
 }
 ```
 
+### Frontend Integration Checklist
+
+1. Copy `vue/src` into your frontend or import it from a checked-out `llm-kit` directory.
+2. Create a client with `createLLMSettingsClient({ basePath: '/your/api/path' })`, or inject your own request functions.
+3. Use `useLLMSettings()` for a custom UI, or mount `LLMSettingsModal`.
+4. Wire `@saved`, `@error`, and `@close` into your app's toast and modal behavior.
+5. Override CSS variables or copy the component and map classes to your design system.
+
 ## Copy/Clone Workflow
 
 For projects where you do not want package dependency management yet:
@@ -191,6 +217,12 @@ cp -R llm-kit/vue/src ./frontend/src/llm-kit
 ```
 
 Then change imports to match your local paths.
+
+Example local Vue import after copying to `frontend/src/llm-kit`:
+
+```js
+import { LLMSettingsModal, createLLMSettingsClient } from '@/llm-kit/index.js'
+```
 
 ## Providers
 
